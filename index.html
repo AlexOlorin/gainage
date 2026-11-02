@@ -53,7 +53,9 @@ h1,h2,h3{font-family:var(--display);font-weight:600;line-height:1.05;margin:0;te
 .jour{display:flex;flex-direction:column;align-items:center;gap:4px;padding:8px 0 7px;border-radius:12px;font-size:12px;color:var(--muted)}
 .jour b{font:600 15px/1 var(--display);color:var(--ink)}
 .jour i{font-style:normal;font-size:11px;letter-spacing:.02em}
+.jour{cursor:pointer}
 .jour.auj{background:var(--surface);box-shadow:inset 0 0 0 2px var(--accent)}
+.jour.modif i{text-decoration:underline dotted;text-underline-offset:3px}
 .jour .pt{width:6px;height:6px;border-radius:50%;background:transparent}
 .jour.fait .pt{background:var(--ok)}
 .jour[data-t="grimpe"] i{color:var(--rest)}
@@ -413,12 +415,14 @@ const JOURS=['lundi','mardi','mercredi','jeudi','vendredi','samedi','dimanche'];
    3. État sauvegardé
    ===================================================================== */
 const CLE='gainage:v1';
-const DEF={niveau:null,paliers:{},jours:['fort','grimpe','leger','fort','grimpe','fort','grimpe'],prio:null,voix:true,son:true,vib:true,hist:[]};
+const DEF={niveau:null,paliers:{},jours:['fort','grimpe','leger','fort','grimpe','fort','grimpe'],prio:null,voix:true,son:true,vib:true,hist:[],exc:{}};
 let S=charger();
 function charger(){
   let o=null;try{o=JSON.parse(localStorage.getItem(CLE))}catch(e){}
   const s=Object.assign(JSON.parse(JSON.stringify(DEF)),o||{});
   for(const th in PAL){const q=s.paliers[th];if(!q||typeof q.p!=='number')s.paliers[th]={p:0,n:0};else q.p=Math.min(Math.max(0,q.p),PAL[th].length-1)}
+  // exceptions datées (« ce jour-là, grimpe ») : on oublie celles de plus de 14 jours
+  for(const k in s.exc){const [a,m,j]=k.split('-').map(Number);if(Date.now()-new Date(a,m-1,j)>14*864e5)delete s.exc[k]}
   return s}
 function sauver(){try{localStorage.setItem(CLE,JSON.stringify(S))}catch(e){}}
 function fixerNiveau(g){S.niveau=g;for(const th in PAL){S.paliers[th]={p:Math.max(0,PAL[th].findIndex(x=>x.g===g)),n:0}}sauver()}
@@ -431,6 +435,13 @@ function etiquette(th){
    ===================================================================== */
 const jourIdx=(d=new Date())=>(d.getDay()+6)%7;
 const cleJour=d=>{const x=new Date(d);return x.getFullYear()+'-'+(x.getMonth()+1)+'-'+x.getDate()};
+// type d'une date : exception saisie pour ce jour, sinon le modèle de la semaine
+const typeDuJour=(d=new Date())=>S.exc[cleJour(d)]||S.jours[jourIdx(d)];
+function changerJour(d){
+  const k=cleJour(d),hab=S.jours[jourIdx(d)],cur=typeDuJour(d);
+  const fixer=t=>{if(t===hab)delete S.exc[k];else S.exc[k]=t;sauver();accueil()};
+  return [...['fort','leger','grimpe','repos'].map(t=>[TYPES[t],t===cur?'✓':t===hab?'habituel':'',()=>fixer(t)]),
+    ...(S.exc[k]?[['Revenir au programme habituel',TYPES_COURT[hab],()=>fixer(hab)]]:[])]}
 function seance(type){
   const sec=[],themes=[];
   const blocs=th=>{themes.push(th);return {titre:THEMES[th].nom,th,blocs:PAL[th][S.paliers[th].p].b}};
@@ -648,9 +659,10 @@ function dansSemaine(iso){
    ===================================================================== */
 function accueil(){
   const A=$('accueil');A.hidden=false;
-  const ji=jourIdx(),type=S.jours[ji],faitsJ=new Set(S.hist.filter(h=>dansSemaine(h.d)&&h.fait>=h.total*.8).map(h=>jourIdx(new Date(h.d))));
+  const ji=jourIdx(),type=typeDuJour(),faitsJ=new Set(S.hist.filter(h=>dansSemaine(h.d)&&h.fait>=h.total*.8).map(h=>jourIdx(new Date(h.d))));
   const fait=faitsJ.has(ji);
-  const semaine=JOURS.map((j,i)=>`<div class="jour${i===ji?' auj':''}${faitsJ.has(i)?' fait':''}" data-t="${S.jours[i]}"><b>${j[0].toUpperCase()}</b><i>${TYPES_COURT[S.jours[i]]}</i><span class="pt"></span></div>`).join('');
+  const dates=JOURS.map((_,i)=>{const d=new Date();d.setHours(12,0,0,0);d.setDate(d.getDate()-ji+i);return d});
+  const semaine=JOURS.map((j,i)=>{const t=typeDuJour(dates[i]);return `<div class="jour${i===ji?' auj':''}${faitsJ.has(i)?' fait':''}${S.exc[cleJour(dates[i])]?' modif':''}" data-t="${t}" data-i="${i}" role="button" aria-label="Changer ${j}"><b>${j[0].toUpperCase()}</b><i>${TYPES_COURT[t]}</i><span class="pt"></span></div>`}).join('');
   let s=null,corps='';
   if(type==='fort'||type==='leger'){s=seance(type)}
   else if(type==='grimpe'){s=seance('grimpe')}
@@ -664,7 +676,7 @@ function accueil(){
     <div class="top"><div class="marque">Gainage <span>Grimpe</span></div><button class="rond" id="menu" aria-label="Menu">⋯</button></div>
     <div class="semaine">${semaine}</div>
     <section class="carte">
-      <div class="eyebrow">Aujourd'hui · ${JOURS[ji]}</div>
+      <div class="eyebrow">Aujourd'hui · ${JOURS[ji]}${S.exc[cleJour(dates[ji])]?' · changé':''}</div>
       <h1>${titre}</h1>
       <div class="meta">${meta}</div>
       ${chips}
@@ -678,6 +690,7 @@ function accueil(){
   A.querySelectorAll('[data-m]').forEach(el=>miniature(el,el.dataset.m));
   A.querySelectorAll('.exo').forEach(b=>b.onclick=()=>ficheExo(b.dataset.id));
   if(s)$('go').onclick=()=>lancer(type);
+  A.querySelectorAll('.jour').forEach(el=>el.onclick=()=>ouvrirPop(el,changerJour(dates[+el.dataset.i])));
   $('autre').onclick=ev=>ouvrirPop(ev.currentTarget,[
     ['Séance forte',`${minutes(seance('fort').duree)} min`,()=>lancer('fort')],
     ['Séance légère',`${minutes(seance('leger').duree)} min`,()=>lancer('leger')],
@@ -766,6 +779,7 @@ function monNiveau(){
 
 function mesJours(){
   feuille(`${entete('Mes jours')}<p class="note" style="margin:0">Les jours de grimpe, pas de gainage : seulement un échauffement. Évite les séances fortes la veille d'une grosse séance de grimpe.</p>
+    <p class="note" style="margin:0">Ici, c'est la semaine type. Pour changer un seul jour, touche-le dans la bande de la semaine sur l'accueil.</p>
     ${JOURS.map((j,i)=>`<div class="rangee"><div class="lab"><b>${j[0].toUpperCase()+j.slice(1)}</b></div><div class="seg">${['fort','leger','grimpe','repos'].map(t=>`<button data-j="${i}" data-t="${t}" aria-pressed="${S.jours[i]===t}">${{fort:'Forte',leger:'Légère',grimpe:'Grimpe',repos:'Repos'}[t]}</button>`).join('')}</div></div>`).join('')}`);
   $('feuille-in').querySelectorAll('[data-j]').forEach(b=>b.onclick=()=>{S.jours[+b.dataset.j]=b.dataset.t;sauver();
     b.parentNode.querySelectorAll('button').forEach(x=>x.setAttribute('aria-pressed',x===b));accueil()})}
