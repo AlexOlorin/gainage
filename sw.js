@@ -1,5 +1,5 @@
 // Hors ligne : la page passe d'abord par le réseau (pour avoir la dernière version), le reste par le cache.
-const CACHE = 'gainage-v6';
+const CACHE = 'gainage-v7';
 const FICHIERS = ['./', './index.html', './manifest.webmanifest', './icon-192.png', './icon-512.png', './three.module.min.js'];
 self.addEventListener('install', e => {
   e.waitUntil(caches.open(CACHE).then(c => c.addAll(FICHIERS)));

@@ -145,6 +145,7 @@ h1,h2,h3{font-family:var(--display);font-weight:600;line-height:1.05;margin:0;te
 .fiche h3{font-size:18px}
 .fiche .mal li::marker{content:"✗  ";color:var(--bad)}
 .fiche .bien li::marker{content:"✓  ";color:var(--ok)}
+.fiche .rempl li::marker{content:"↻  ";color:var(--muted)}
 
 /* ---------- Lecteur ---------- */
 #lecteur{position:fixed;inset:0;z-index:10;background:var(--bg);display:flex;flex-direction:column;user-select:none;-webkit-user-select:none;
@@ -265,6 +266,17 @@ const ERREURS={
   poignets:['Trop loin d’un coup : avance progressivement'],
   chatvache:['Coudes qui plient'],
   cercles:['Épaules haussées, cou rentré'],
+  appuiSol:['Épaules aux oreilles','Coudes pliés'],
+  tuckSol:['Dos rond, épaules haussées'],
+  tuckAvSol:['Dos rond, bassin qui recule'],
+  uneJSol:['Jambe tendue qui plie et retombe'],
+  lsitSol:['Genoux pliés, pieds qui tombent','Épaules haussées vers les oreilles'],
+  pompeSol:['Bassin qui s’affaisse','Coudes écartés'],
+  pompeGSol:['Bassin qui s’affaisse'],
+  dipsSol:['Fesses qui retombent au sol'],
+  squatTenu:['Trop haut : descends jusqu’aux cuisses parallèles'],
+  fenteTenue:['Genou arrière posé au sol'],
+  pistolLibre:['Dos rond, talon qui décolle'],
 };
 
 /* =====================================================================
@@ -273,15 +285,15 @@ const ERREURS={
    cotes : chaque série se fait à gauche puis à droite. mvt : animation en boucle pendant l'effort.
    ===================================================================== */
 const EXOS={
-  appui:{nom:'Appui sur poignées',th:'gainage',mode:'tenue',anim:'appui',but:'Première étape du L-sit : soulever le corps avec les bras.',
+  appui:{nom:'Appui sur poignées',th:'gainage',mode:'tenue',anim:'appui',mat:'poignees',but:'Première étape du L-sit : soulever le corps avec les bras.',
     cles:['Bras tendus, coudes verrouillés','Pousse le sol : épaules loin des oreilles','Pieds au sol pour alléger le poids']},
-  tuck:{nom:'Tuck sit',th:'gainage',mode:'tenue',anim:'tuck',but:'Le L-sit genoux pliés.',
+  tuck:{nom:'Tuck sit',th:'gainage',mode:'tenue',anim:'tuck',mat:'poignees',but:'Le L-sit genoux pliés.',
     cles:['Mains sur les poignées, bras tendus','Genoux serrés vers la poitrine','Épaules basses, regard devant']},
-  tuckAv:{nom:'Tuck sit avancé',th:'gainage',mode:'tenue',anim:'tuckAv',but:'Tuck sit genoux éloignés : plus de levier.',
+  tuckAv:{nom:'Tuck sit avancé',th:'gainage',mode:'tenue',anim:'tuckAv',mat:'poignees',but:'Tuck sit genoux éloignés : plus de levier.',
     cles:['Genoux éloignés de la poitrine','Dos droit, hanches entre les mains','Pousse fort dans les poignées']},
-  uneJ:{nom:'L-sit une jambe',th:'gainage',mode:'tenue',anim:'uneJ',cotes:true,but:'Une jambe tendue, l’autre pliée.',
+  uneJ:{nom:'L-sit une jambe',th:'gainage',mode:'tenue',anim:'uneJ',mat:'poignees',cotes:true,but:'Une jambe tendue, l’autre pliée.',
     cles:['Jambe tendue à l’horizontale, pointe tendue','L’autre genou reste replié','Épaules basses']},
-  lsit:{nom:'L-sit',th:'gainage',mode:'tenue',anim:'lsit',but:'Jambes tendues à l’horizontale, en appui sur les mains.',
+  lsit:{nom:'L-sit',th:'gainage',mode:'tenue',anim:'lsit',mat:'poignees',but:'Jambes tendues à l’horizontale, en appui sur les mains.',
     cles:['Jambes tendues et serrées','Pousse fort dans les poignées','Hanches entre les mains']},
   hollowT:{nom:'Hollow body genoux pliés',th:'gainage',mode:'tenue',anim:'hollowT',but:'Gainage du ventre, version facile.',
     cles:['Bas du dos plaqué au sol','Épaules décollées, menton rentré','Genoux au-dessus des hanches']},
@@ -307,27 +319,27 @@ const EXOS={
     cles:['Genou arrière au sol','Serre la fesse arrière, avance le bassin','Buste droit']},
   pince:{nom:'Pince assise',th:'hanches',mode:'tenue',anim:'pince',but:'Souplesse de l’arrière des cuisses.',
     cles:['Jambes tendues','Penche-toi depuis les hanches, dos long','Sans forcer : tu dois pouvoir respirer']},
-  elev:{nom:'Élévations des épaules en appui',th:'poussee',mode:'reps',tempo:3,anim:'appui',mvt:true,but:'Contrôle des épaules en appui.',
+  elev:{nom:'Élévations des épaules en appui',th:'poussee',mode:'reps',tempo:3,anim:'appui',mat:'poignees',mvt:true,but:'Contrôle des épaules en appui.',
     cles:['Bras toujours tendus','Monte et descends seulement avec les épaules']},
-  pompeG:{nom:'Pompes sur les genoux',th:'poussee',mode:'reps',tempo:3,anim:'pompeG',but:'Pompes faciles, sur les poignées.',
+  pompeG:{nom:'Pompes sur les genoux',th:'poussee',mode:'reps',tempo:3,anim:'pompeG',mat:'poignees',but:'Pompes faciles, sur les poignées.',
     cles:['Mains sur les poignées sous les épaules','Corps droit des genoux à la tête','Coudes le long du corps']},
-  pompe:{nom:'Pompes sur poignées',th:'poussee',mode:'reps',tempo:3,anim:'pompe',but:'Pour équilibrer toute la traction de la grimpe.',
+  pompe:{nom:'Pompes sur poignées',th:'poussee',mode:'reps',tempo:3,anim:'pompe',mat:'poignees',but:'Pour équilibrer toute la traction de la grimpe.',
     cles:['Corps gainé, droit comme une planche','Coudes le long du corps','Poitrine jusqu’aux poignées']},
-  dips:{nom:'Dips sur chaise, jambes pliées',th:'poussee',mode:'reps',tempo:3,anim:'dips',but:'Triceps et épaules pour les rétablissements.',
+  dips:{nom:'Dips sur chaise, jambes pliées',th:'poussee',mode:'reps',tempo:3,anim:'dips',mat:'chaise',but:'Triceps et épaules pour les rétablissements.',
     cles:['Mains sur le bord, doigts vers l’avant','Descends jusqu’à 90° au coude, pas plus','Épaules basses, poitrine ouverte']},
-  dipsT:{nom:'Dips sur chaise, jambes tendues',th:'poussee',mode:'reps',tempo:3,anim:'dipsT',but:'Même geste, plus de poids sur les bras.',
+  dipsT:{nom:'Dips sur chaise, jambes tendues',th:'poussee',mode:'reps',tempo:3,anim:'dipsT',mat:'chaise',but:'Même geste, plus de poids sur les bras.',
     cles:['Talons au sol, jambes tendues','Descends jusqu’à 90° au coude, pas plus','Épaules basses']},
-  dipsC:{nom:'Dips entre deux chaises',th:'poussee',mode:'reps',tempo:3,anim:'chaises',but:'Tout le poids sur les bras.',
+  dipsC:{nom:'Dips entre deux chaises',th:'poussee',mode:'reps',tempo:3,anim:'chaises',mat:'chaises',but:'Tout le poids sur les bras.',
     cles:['Deux chaises solides calées contre un mur','Genoux pliés, pieds décollés','Coude à 90° au plus bas']},
-  dipsB:{nom:'Dips aux barres parallèles',th:'poussee',mode:'reps',tempo:3,anim:'bar',but:'Le vrai dips, au parc ou à la salle.',
+  dipsB:{nom:'Dips aux barres parallèles',th:'poussee',mode:'reps',tempo:3,anim:'bar',mat:'barres',but:'Le vrai dips, au parc ou à la salle.',
     cles:['Bras tendus en haut, épaules basses','Descends jusqu’à 90° au coude','Remonte sans élan']},
-  chaise:{nom:'Chaise contre le mur',th:'jambes',mode:'tenue',anim:'chaise',but:'Force des cuisses, sans matériel.',
+  chaise:{nom:'Chaise contre le mur',th:'jambes',mode:'tenue',anim:'chaise',mat:'mur',but:'Force des cuisses, sans matériel.',
     cles:['Dos plaqué au mur','Cuisses parallèles au sol','Genoux au-dessus des chevilles']},
-  chaise1:{nom:'Chaise sur une jambe',th:'jambes',mode:'tenue',anim:'chaise1',cotes:true,but:'La chaise, sur un seul appui.',
+  chaise1:{nom:'Chaise sur une jambe',th:'jambes',mode:'tenue',anim:'chaise1',mat:'mur',cotes:true,but:'La chaise, sur un seul appui.',
     cles:['Dos plaqué au mur','Une jambe tendue devant','Genou d’appui au-dessus de la cheville']},
   cosaque:{nom:'Squat cosaque',th:'jambes',mode:'reps',tempo:4,anim:'cosaque',but:'Force en grand écart : monter sur un pied haut et loin.',
     cles:['Pieds très écartés, alterne gauche et droite','Une jambe plie, l’autre reste tendue','Talon au sol, genou dans l’axe du pied','Mains au sol devant si besoin']},
-  pistol:{nom:'Pistol assisté',th:'jambes',mode:'reps',tempo:4,anim:'pistol',cotes:true,but:'Se relever sur un pied, comme sur une prise de pied haute.',
+  pistol:{nom:'Pistol assisté',th:'jambes',mode:'reps',tempo:4,anim:'pistol',mat:'montant',cotes:true,but:'Se relever sur un pied, comme sur une prise de pied haute.',
     cles:['Tiens un montant de porte','Descends lentement sur une jambe','Talon au sol, genou dans l’axe']},
   poignets:{nom:'Échauffement des poignets',th:'echauffement',mode:'tenue',anim:'poignets',mvt:true,but:'Préparer les poignets aux appuis.',
     cles:['À quatre pattes, doigts vers l’avant','Bascule doucement le poids vers l’avant, puis l’arrière']},
@@ -335,7 +347,38 @@ const EXOS={
     cles:['Grands cercles lents','Épaules basses, cou long']},
   chatvache:{nom:'Chat-vache',th:'echauffement',mode:'reps',tempo:4,anim:'chatvache',but:'Mobiliser le dos.',
     cles:['À quatre pattes','Arrondis le dos en soufflant, creuse en inspirant','Bras tendus']},
+  appuiSol:{nom:'Appui au sol',th:'gainage',mode:'tenue',anim:'appuiSol',but:'L’appui sur poignées, mains à plat au sol.',
+    cles:['Mains à plat près des hanches, doigts vers l’avant','Bras tendus, pousse le sol : épaules basses','Pieds au sol pour alléger le poids']},
+  tuckSol:{nom:'Tuck sit au sol',th:'gainage',mode:'tenue',anim:'tuckSol',but:'Le tuck sit sans poignées : les fesses sont plus près du sol.',
+    cles:['Mains à plat près des hanches','Décolle les fesses, même de peu','Genoux serrés vers la poitrine']},
+  tuckAvSol:{nom:'Tuck sit avancé au sol',th:'gainage',mode:'tenue',anim:'tuckAvSol',but:'Tuck sit genoux éloignés, mains au sol.',
+    cles:['Mains à plat près des hanches','Décolle les fesses, même de peu','Genoux éloignés de la poitrine, dos droit']},
+  uneJSol:{nom:'L-sit une jambe au sol',th:'gainage',mode:'tenue',anim:'uneJSol',cotes:true,but:'Une jambe tendue, l’autre pliée, mains au sol.',
+    cles:['Décolle les fesses, même de peu','Jambe tendue, pointe tendue','Épaules basses']},
+  lsitSol:{nom:'L-sit au sol',th:'gainage',mode:'tenue',anim:'lsitSol',but:'Le L-sit mains à plat : il faut beaucoup de compression.',
+    cles:['Décolle les fesses, même de peu','Jambes tendues et serrées','Pousse fort dans le sol']},
+  elevSol:{nom:'Élévations des épaules au sol',th:'poussee',mode:'reps',tempo:3,anim:'appuiSol',mvt:true,but:'Contrôle des épaules en appui, mains au sol.',
+    cles:['Bras toujours tendus','Monte et descends seulement avec les épaules']},
+  pompeGSol:{nom:'Pompes sur les genoux, mains au sol',th:'poussee',mode:'reps',tempo:3,anim:'pompeGSol',but:'Pompes faciles, sans poignées.',
+    cles:['Mains à plat sous les épaules','Corps droit des genoux à la tête','Coudes le long du corps']},
+  pompeSol:{nom:'Pompes',th:'poussee',mode:'reps',tempo:3,anim:'pompeSol',but:'Les pompes classiques, mains à plat.',
+    cles:['Mains sous les épaules, doigts vers l’avant','Corps gainé, droit comme une planche','Coudes le long du corps']},
+  dipsSol:{nom:'Dips au sol',th:'poussee',mode:'reps',tempo:3,anim:'dipsSol',but:'Les dips sans chaise : triceps et épaules.',
+    cles:['Mains au sol derrière toi, doigts vers toi','Fesses décollées, pieds à plat','Plie les coudes vers l’arrière, épaules basses']},
+  squatTenu:{nom:'Squat tenu',th:'jambes',mode:'tenue',anim:'squatTenu',but:'La chaise sans mur : force des cuisses.',
+    cles:['Cuisses parallèles au sol','Talons au sol, poids sur les talons','Bras devant pour l’équilibre']},
+  fenteTenue:{nom:'Fente tenue',th:'jambes',mode:'tenue',anim:'fenteTenue',cotes:true,but:'La chaise sur une jambe, sans mur.',
+    cles:['Genou arrière juste au-dessus du sol','Genou avant au-dessus de la cheville','Buste droit, mains aux hanches']},
+  pistolLibre:{nom:'Pistol partiel',th:'jambes',mode:'reps',tempo:4,anim:'pistolLibre',cotes:true,but:'Le pistol sans appui, sur une descente réduite.',
+    cles:['Bras tendus devant pour l’équilibre','Descends à mi-hauteur seulement','Talon au sol, genou dans l’axe']},
 };
+
+/* Matériel : un exercice qui en demande (EXOS[id].mat) est remplacé par le premier de REMPL[id] disponible */
+const MAT={poignees:'Poignées',chaise:'Une chaise',chaises:'Deux chaises',barres:'Barres parallèles',mur:'Un mur libre',montant:'Un montant de porte'};
+const REMPL={appui:['appuiSol'],tuck:['tuckSol'],tuckAv:['tuckAvSol'],uneJ:['uneJSol'],lsit:['lsitSol'],elev:['elevSol'],pompe:['pompeSol'],pompeG:['pompeGSol'],
+  dips:['dipsSol'],dipsT:['dipsSol'],dipsC:['dips','dipsSol'],dipsB:['dipsC','dips','dipsSol'],chaise:['squatTenu'],chaise1:['fenteTenue'],pistol:['pistolLibre']};
+const dispo=id=>!EXOS[id].mat||S.mat[EXOS[id].mat]!==false;
+const remplacant=id=>dispo(id)?id:(REMPL[id]||[]).find(dispo)||id;
 
 const THEMES={
   gainage:{nom:'Gainage · L-sit',court:'Gainage'},
@@ -415,7 +458,7 @@ const JOURS=['lundi','mardi','mercredi','jeudi','vendredi','samedi','dimanche'];
    3. État sauvegardé
    ===================================================================== */
 const CLE='gainage:v1';
-const DEF={niveau:null,paliers:{},jours:['fort','grimpe','leger','fort','grimpe','fort','grimpe'],prio:null,voix:true,son:true,vib:true,hist:[],exc:{}};
+const DEF={niveau:null,paliers:{},jours:['fort','grimpe','leger','fort','grimpe','fort','grimpe'],prio:null,voix:true,son:true,vib:true,hist:[],exc:{},mat:{}};
 let S=charger();
 function charger(){
   let o=null;try{o=JSON.parse(localStorage.getItem(CLE))}catch(e){}
@@ -458,6 +501,13 @@ function seance(type){
     sec.push({titre:'Échauffement avant de grimper',blocs:GRIMPE});
   }
   const s={type,titre:type==='grimpe'?'Échauffement grimpe':TYPES[type],sections:sec,themes};
+  // matériel : chaque exercice indisponible est remplacé (besoin = matériel à proposer, rempl = [ancien, nouveau])
+  const besoin=new Set(),rempl=new Map();
+  for(const sc of s.sections)sc.blocs=sc.blocs.map(([id,...r])=>{
+    for(const k of [id,...(REMPL[id]||[])]){if(EXOS[k].mat)besoin.add(EXOS[k].mat);if(dispo(k))break}
+    const n=remplacant(id);if(n!==id)rempl.set(id,n);
+    return [n,...r]});
+  s.besoin=[...besoin];s.rempl=[...rempl];
   s.etapes=etapes(s);s.duree=s.etapes.reduce((a,e)=>a+e.dur+e.repos,0)+10;
   return s}
 function etapes(s){
@@ -532,14 +582,27 @@ const ICO_PLAY='<svg viewBox="0 0 24 24"><path d="M7 4.5v15l12.5-7.5z"/></svg>';
 const ICO_PAUSE='<svg viewBox="0 0 24 24"><path d="M6 4.5h4.2v15H6zM13.8 4.5H18v15h-4.2z"/></svg>';
 let R=null,vueL=null;
 function lancer(type){
-  audio();amorcerVoix();garderEcran();
+  audio();amorcerVoix();
   const s=seance(type);if(!s.etapes.length)return;
+  if(s.besoin.length)choisirMateriel(type);else demarrer(s)}
+function demarrer(s){
+  garderEcran();
   R={s,et:s.etapes,i:0,phase:'prep',pause:false,fait:0,debut:Date.now()};
   fermerFeuille();fermerPop();
   $('lecteur').hidden=false;$('accueil').hidden=true;
   if(!vueL)vueL=new Vue($('lc-scene'),{tourner:false}); // pas de rotation : toucher l'écran met en pause
   phase('prep',10);
   dire(`C'est parti. Premier exercice : ${R.et[0].x.nom}.`)}
+// feuille du matériel avant chaque séance : décocher remplace les exercices concernés
+function choisirMateriel(type){
+  const s=seance(type);
+  feuille(`${entete('Ton matériel')}<div class="fiche">
+    <p class="note" style="margin:0">Décoche ce que tu n’as pas sous la main : les exercices sont remplacés.</p>
+    <div class="liste-menu">${s.besoin.map(m=>`<div class="bascule"><span>${MAT[m]}</span><button class="inter" role="switch" aria-checked="${S.mat[m]!==false}" data-mat="${m}" aria-label="${MAT[m]}"></button></div>`).join('')}</div>
+    ${s.rempl.length?`<div><h3>Remplacés</h3><ul class="rempl">${s.rempl.map(([a,b])=>`<li>${EXOS[a].nom} → <b>${EXOS[b].nom}</b></li>`).join('')}</ul></div>`:''}
+    <button class="go" id="mat-go">${ICO_PLAY}Commencer</button></div>`);
+  $('feuille-in').querySelectorAll('[data-mat]').forEach(b=>b.onclick=()=>{const m=b.dataset.mat;if(S.mat[m]===false)delete S.mat[m];else S.mat[m]=false;sauver();accueil();choisirMateriel(type)});
+  $('mat-go').onclick=()=>demarrer(seance(type))}
 function phase(ph,dur){
   R.phase=ph;R.t0=Date.now();R.fin=R.t0+dur*1000;R.dur=dur;R.sec=null;R.rep=0;
   afficher()}
@@ -1227,6 +1290,43 @@ PZ.frog={rot:[70,0,0],L:[-4],T:[-4],cl:[0,-4],cou:[10],tete:[8],
 PZ.frogArr=X3(PZ.frog,{ancre:['bassin',[0,.16,-.09]],vise:['epaules',[0,.315,.36]],cou:[16],tete:[10]});
 PZ.frogPieds=X3(PZ.frog,{ik:{p:{c:[.225,.05,-.152],vers:[.47,.056,.2],ori:{y:[.57,0,.82],z:[.82,0,-.57]}}}});
 
+// ---- Variantes sans matériel ----
+// mains à plat au sol au lieu des poignées : épaules plus basses
+const MAINS_SOL={m:plat([.22,.033,0],[0,0,1],[.25,-.1,-1])};
+const auSol=(o,dy=.11)=>{const [n,[x,y,z]]=o.ancre;return {...o,ancre:n==='epaules'?[n,[x,y-dy,z]]:o.ancre,ik:{...o.ik,...MAINS_SOL}}};
+// bassin plus bas : genoux plus remontés pour que les pieds ne touchent pas
+const PLI_SOL={tuck:{h:[152,4,0]},tuckAv:{h:[118,4,0]},tuckRond:{h:[152,4,0]},uneJ:{hD:[152,4,0]},lsitPlie:{h:[124,3,0]},
+  uneJTombe:{hD:[152,4,0],hG:[124,3,0]}};
+for(const k of ['assis','tuck','tuckRond','tuckAv','tuckAvRond','lsit','lsitPlie','lsitHausse','uneJ','uneJTombe','appui','appuiBas','appuiCoude'])
+  PZ[k+'Sol']=auSol(X3(PZ[k],PLI_SOL[k]||{}));
+PZ.uneJbSol=miroir(PZ.uneJSol);
+const MAINS_PS={m:plat([.24,.033,.10],[0,0,1],[.35,.15,-1])};
+PZ.pompeSH=X3(PZ.pompeH,{vise:['epaules',[0,.60,.10]],ik:MAINS_PS});
+PZ.pompeSB=X3(PZ.pompeSH,{cl:[0,-6],tete:[-14],vise:['epaules',[0,.29,.23]]});
+PZ.pompeSCreux=X3(PZ.pompeSH,{L:[-22],T:[-5],h:[-12,1,0],tete:[-20]});
+PZ.pompeSCoudes=X3(PZ.pompeSB,{ik:{m:plat([.24,.033,.10],[0,0,1],[1,.35,-.1])}});
+PZ.pompeGSH=X3(PZ.pompeGH,{vise:['epaules',[0,.60,.02]],ik:MAINS_PS});
+PZ.pompeGSB=X3(PZ.pompeGSH,{cl:[0,-6],tete:[-14],vise:['epaules',[0,.29,.225]]});
+PZ.pompeGSCreux=X3(PZ.pompeGSH,{L:[-22],T:[-5],h:[-12,1,0],tete:[-20]});
+// dips au sol : mains derrière, fesses décollées, pieds à plat
+const PIEDS_DS={p:pied([.13,.075,.45],[.08,0,1],{pole:[0,1,.3]})};
+const MAINS_DS={mG:plat([.20,.033,-.20],[.3,0,-1],[.3,.2,-1]),mD:plat([-.20,.033,-.20],[-.3,0,-1],[-.3,.2,-1])};
+PZ.dipsSolH={rot:[-10,0,0],L:[-4],T:[-4],cl:[-6,2],cou:[10],tete:[4],ancre:['fesses',[0,.09,0]],ik:{...MAINS_DS,...PIEDS_DS}};
+PZ.dipsSolB=X3(PZ.dipsSolH,{rot:[-26,0,0],ancre:['fesses',[0,.04,-.02]]});
+PZ.dipsSolAssis=X3(PZ.dipsSolH,{rot:[-30,0,0],cl:[14,6],ancre:['fesses',[0,.012,-.03]]});
+// squat tenu (chaise sans mur), bras devant
+PZ.squatTenu={rot:[30,0,0],L:[2],T:[2],cl:[0,4],cou:[-8],tete:[-8],ep:[85,6,0],cd:[4],ancre:['bassin',[0,.52,-.30]],
+  ik:{p:pied([.12,.075,-.03],[.12,0,1],{pole:[.15,.2,1]})}};
+PZ.squatHaut=X3(PZ.squatTenu,{rot:[16,0,0],ancre:['bassin',[0,.68,-.20]]});
+// fente tenue : genou arrière juste au-dessus du sol
+PZ.fenteTenue=X3(PZ.fente,{ancre:['genouD',[-.11,.16,-.30]],gD:[58],chD:[56]});
+// pistol sans appui : bras devant, descente à mi-hauteur
+PZ.pistLH={...PZ.pistH,ep:[90,6,0],cd:[4],ik:{pD:pied([-.10,.075,-.02],[-.05,0,1])}};
+PZ.pistLB={...PZ.pistB,rot:[26,0,0],hG:[100,4,0],gG:[8],ep:[95,6,0],cd:[4],ancre:['bassin',[0,.60,-.16]],
+  ik:{pD:pied([-.10,.075,-.02],[-.05,0,1],{vers:[-.12,.50,.40]})}};
+PZ.pistLRond=X3(PZ.pistLB,{rot:[12,0,0],L:[24],T:[26],cou:[14],tete:[12],
+  ik:{pD:pied([-.10,.145,-.02],[-.05,0,1],{pitch:-28,vers:[-.12,.50,.40]})}});
+
 for(const k in PZ)PZ[k]=pose(PZ[k]);
 
 /* Parties du corps (pour colorer une erreur) */
@@ -1337,6 +1437,43 @@ const ANIM3={
   cercles:{cam:{az:38,el:8},vign:2,
     seq:[[PZ.c0,0,0],[PZ.c90,480,0,'lin'],[PZ.c180,480,0,'lin'],[PZ.c270,480,0,'lin'],[PZ.c360,480,0,'lin']],cible:4,
     err:[{p:PZ.cHausse,bon:PZ.c450,zone:ZONES.epaules}]},
+  // sans matériel
+  appuiSol:{cam:{az:-58,el:9},tapis:true,
+    seq:[[PZ.appuiBasSol,700,500],[PZ.appuiSol,800,1500]],cible:1,
+    err:[{p:PZ.appuiBasSol,zone:ZONES.epaules},
+         {p:PZ.appuiCoudeSol,zone:ZONES.coudes}]},
+  tuckSol:{cam:{az:-58,el:9},tapis:true,
+    seq:[[PZ.assisSol,700,500],[PZ.tuckSol,900,1800]],cible:1,
+    err:[{p:PZ.tuckRondSol,zone:Z(ZONES.dos,ZONES.epaules)}]},
+  tuckAvSol:{cam:{az:-58,el:9},tapis:true,
+    seq:[[PZ.assisSol,700,500],[PZ.tuckAvSol,900,1800]],cible:1,
+    err:[{p:PZ.tuckAvRondSol,zone:Z(ZONES.dos,ZONES.bassin)}]},
+  uneJSol:{cam:{az:-58,el:9},tapis:true,
+    seq:[[PZ.assisSol,700,400],[PZ.tuckSol,700,300],[PZ.uneJSol,700,1400],[PZ.tuckSol,600,300],[PZ.uneJbSol,700,1400]],cible:2,
+    err:[{p:PZ.uneJTombeSol,zone:ZONES.jambeG}]},
+  lsitSol:{cam:{az:-58,el:9},tapis:true,
+    seq:[[PZ.assisSol,700,500],[PZ.tuckSol,900,350],[PZ.lsitSol,900,1900]],cible:2,
+    err:[{p:PZ.lsitPlieSol,zone:ZONES.jambes},
+         {p:PZ.lsitHausseSol,zone:ZONES.epaules}]},
+  pompeSol:{cam:{az:-72,el:14},tapis:true,
+    seq:[[PZ.pompeSH,1100,250],[PZ.pompeSB,1300,250]],cible:0,
+    err:[{p:PZ.pompeSCreux,zone:ZONES.bassin},
+         {p:PZ.pompeSCoudes,de:1,zone:ZONES.coudes}]},
+  pompeGSol:{cam:{az:-72,el:14},tapis:true,
+    seq:[[PZ.pompeGSH,1100,250],[PZ.pompeGSB,1300,250]],cible:0,
+    err:[{p:PZ.pompeGSCreux,zone:ZONES.bassin}]},
+  dipsSol:{cam:{az:-68,el:10},tapis:true,
+    seq:[[PZ.dipsSolH,800,300],[PZ.dipsSolB,1000,300]],cible:0,
+    err:[{p:PZ.dipsSolAssis,de:1,zone:Z(ZONES.bassin,ZONES.coudes)}]},
+  squatTenu:{cam:{az:-66,el:8,cle:1},tapis:true,
+    seq:[[PZ.debout,800,400],[PZ.squatTenu,1400,1800]],cible:1,
+    err:[{p:PZ.squatHaut,zone:ZONES.jambes}]},
+  fenteTenue:{cam:{az:-76,el:10},tapis:true,
+    seq:[[PZ.fente,900,400],[PZ.fenteTenue,900,1800]],cible:1,
+    err:[{p:PZ.fente,zone:ZONES.jambeD,repere:['jambeD']}]},
+  pistolLibre:{cam:{az:-50,el:8},tapis:true,
+    seq:[[PZ.pistLH,1000,300],[PZ.pistLB,1300,400]],cible:1,
+    err:[{p:PZ.pistLRond,zone:Z(ZONES.dos,ZONES.jambeD)}]},
 };
 for(const id in ANIM3)ANIM3[id].err.forEach((e,i)=>{e.t=ERREURS[id][i]});
 
